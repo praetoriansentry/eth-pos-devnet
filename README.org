@@ -37,8 +37,6 @@ First, checkout this repository and install docker. Then run:
 docker compose up -d
 #+end_src
 
-
-
 You will see the following:
 
 #+begin_example
@@ -57,7 +55,8 @@ $ docker compose up -d
  ✔ Container eth-pos-devnet-geth-1                         Started
 #+end_example
 
-Each time you restart, you can wipe the old data using ~make clean~
+To stop the containers you can run ~docker compose stop~. Each time
+you restart, you can wipe the old data using ~make clean~
 
 Next, you can inspect the logs of the different services launched
 
@@ -88,3 +87,31 @@ Create the genesis file allocations for our mnemonic
 polycli wallet inspect --mnemonic "code code code code code code code code code code code quality" | jq '.Addresses[] | {"key": .ETHAddress, "value": { "balance": "0x21e19e0c9bab2400000"}}' | jq -s 'from_entries'
 #+end_src
 
+
+* Jerrigon Testing Procedure
+
+The intent of this repo is to be able to test Erigon State Witnesses
+against the Zero Pover. Using this devnet setup, here is a procedure
+for creating some test data.
+
+1. Start the devnet up with ~docker compose up~
+2. Wait for blocks to start being produced. This should only take a few seconds
+3. Generate some load and test transactions. I'm generally using this
+   [[https://github.com/maticnetwork/jhilliard/tree/GH013-bypass/snowball][snowball]] script which creates a bunch of weird transactions for
+   testing.
+4. Once the load is done, you can stop the devnet with ~docker compose
+   stop~
+5. Checkout and build [[https://github.com/cffls/erigon/tree/feat/zero][jerrigon]] from the ~feat/zero~ branch. We'll need
+   builds of the ~state~ binary along with ~erigon~
+6. Create a copy of the erigon state directory to avoid corrupting things
+
+#+begin_src bash
+sudo cp -r execution/erigon/ execution/erigon.bak
+sudo chown -R $USER:$USER execution/erigon.bak/
+#+end_src
+
+7. Run the stateless command
+
+#+begin_src bash
+~/code/jerrigon/build/bin/state stateless --genesis execution/genesis.json --block 1 --datadir $PWD/execution/erigon.bak --witnessDbFile $PWD/execution/erigon.bak/chaindata/ --statefile $PWD/jerrigon-state --chain mainnet
+#+end_src
