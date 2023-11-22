@@ -77,7 +77,7 @@ services:
       - --execution-endpoint=http://geth:8551
       - --accept-terms-of-use
       - --jwt-secret=/execution/jwtsecret
-      - --suggested-fee-recipient=0x123463a4b065722e99115d6c222f267d9cabb524
+      - --suggested-fee-recipient=0x85da99c8a7c2c95964c8efd687e95e632fc533d6
       - --minimum-peers-per-subnet=0
       - --enable-debug-rpc-endpoints
       - --p2p-static-id
@@ -120,7 +120,7 @@ services:
       - --execution-endpoint=http://erigon:8551
       - --accept-terms-of-use
       - --jwt-secret=/execution/jwtsecret
-      - --suggested-fee-recipient=0x123463a4b065722e99115d6c222f267d9cabb524
+      - --suggested-fee-recipient=0x85da99c8a7c2c95964c8efd687e95e632fc533d6
       - --minimum-peers-per-subnet=0
       - --enable-debug-rpc-endpoints
       - --p2p-tcp-port=13001
@@ -157,7 +157,7 @@ services:
       - --authrpc.jwtsecret=/execution/jwtsecret
       - --datadir=/execution/geth
       - --allow-insecure-unlock
-      - --unlock=0x123463a4b065722e99115d6c222f267d9cabb524
+      - --unlock=0x85da99c8a7c2c95964c8efd687e95e632fc533d6
       - --password=/execution/geth_password.txt
       - --nodiscover
       - --syncmode=full
