@@ -3,7 +3,7 @@ services:
   #Creates a genesis state for the beacon chain using a YAML configuration file and
   # a deterministic set of 64 validators.
   create-beacon-chain-genesis:
-    image: "gcr.io/prysmaticlabs/prysm/cmd/prysmctl:local-devnet"
+    image: "gcr.io/prysmaticlabs/prysm/cmd/prysmctl:latest"
     command:
       - testnet
       - generate-genesis
@@ -14,6 +14,14 @@ services:
       - --chain-config-file=/consensus/config.yml
       - --geth-genesis-json-in=/execution/genesis.json
       - --geth-genesis-json-out=/execution/genesis.json
+    volumes:
+      - ./consensus:/consensus
+      - ./execution:/execution
+
+  create-beacon-node-keys:
+    image: "alpine:latest"
+    command:
+      - ./consensus/init.sh
     volumes:
       - ./consensus:/consensus
       - ./execution:/execution
@@ -33,18 +41,52 @@ services:
   # and connects to go-ethereum in the same network as the execution client.
   # The account used in go-ethereum is set as the suggested fee recipient for transactions
   # proposed via the validators attached to the beacon node.
-  beacon-chain:
+  beacon-chain-1:
     image: "gcr.io/prysmaticlabs/prysm/beacon-chain:v4.0.8"
     command:
       - --datadir=/consensus/beacondata
-      # No peers to sync with in this testnet, so setting to 0
       - --min-sync-peers=0
       - --genesis-state=/consensus/genesis.ssz
       - --bootstrap-node=
       - --interop-eth1data-votes
-      # The chain configuration file used for setting up Prysm
       - --chain-config-file=/consensus/config.yml
-      # We specify the chain id used by our execution client
+      - --contract-deployment-block=0
+      - --chain-id=${CHAIN_ID:-32382}
+      - --rpc-host=0.0.0.0
+      - --grpc-gateway-host=0.0.0.0
+      - --execution-endpoint=http://geth:8551
+      - --accept-terms-of-use
+      - --jwt-secret=/execution/jwtsecret
+      - --suggested-fee-recipient=0x123463a4b065722e99115d6c222f267d9cabb524
+      - --minimum-peers-per-subnet=0
+      - --enable-debug-rpc-endpoints
+      - --p2p-static-id
+    depends_on:
+      create-beacon-chain-genesis:
+        condition: service_completed_successfully
+      create-beacon-node-keys:
+        condition: service_completed_successfully
+    ports:
+      - 4000:4000
+      - 3500:3500
+      - 8080:8080
+      - 6060:6060
+      - 9090:9090
+    volumes:
+      - ./consensus:/consensus
+      - ./execution:/execution
+      - ./execution/jwtsecret:/execution/jwtsecret
+
+
+  beacon-chain-2:
+    image: "gcr.io/prysmaticlabs/prysm/beacon-chain:v4.0.8"
+    command:
+      - --datadir=/consensus/beacondata-2
+      - --bootstrap-node=enr:-MK4QCsVkAoAfeJA6_aJYF4piz7bk3OREdsfxDu4sitkCj4XJYlXsNLKbhlEtrQEr1HZw8mvNdeydIlQqBt6E7Su9rmGAYv3MqzTh2F0dG5ldHOIAAAAAAAAAACEZXRoMpBa8xKTIAAAkv__________gmlkgnY0gmlwhKwSAAOJc2VjcDI1NmsxoQIs_IFTc4n1bgSHP8fga_ASyG3CrxK7owx88Rqe05FinYhzeW5jbmV0cwCDdGNwgjLIg3VkcIIu4A
+      - --min-sync-peers=1
+      - --genesis-state=/consensus/genesis.ssz
+      - --interop-eth1data-votes
+      - --chain-config-file=/consensus/config.yml
       - --contract-deployment-block=0
       - --chain-id=${CHAIN_ID:-32382}
       - --rpc-host=0.0.0.0
@@ -58,12 +100,8 @@ services:
     depends_on:
       create-beacon-chain-genesis:
         condition: service_completed_successfully
-    ports:
-      - 4000:4000
-      - 3500:3500
-      - 8080:8080
-      - 6060:6060
-      - 9090:9090
+      create-beacon-node-keys:
+        condition: service_completed_successfully
     volumes:
       - ./consensus:/consensus
       - ./execution:/execution
@@ -98,7 +136,7 @@ services:
     depends_on:
       geth-genesis:
         condition: service_completed_successfully
-      beacon-chain:
+      beacon-chain-1:
         condition: service_started
     volumes:
       - ./execution:/execution
@@ -110,14 +148,15 @@ services:
   validator:
     image: "gcr.io/prysmaticlabs/prysm/validator:v4.0.8"
     command:
-      - --beacon-rpc-provider=beacon-chain:4000
+      - --beacon-rpc-provider=beacon-chain-1:4000
       - --datadir=/consensus/validatordata
       - --accept-terms-of-use
       - --interop-num-validators=64
       - --interop-start-index=0
       - --chain-config-file=/consensus/config.yml
     depends_on:
-      beacon-chain:
+      beacon-chain-1:
         condition: service_started
     volumes:
       - ./consensus:/consensus
+
