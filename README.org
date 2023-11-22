@@ -107,8 +107,7 @@ for creating some test data.
 3. Generate some load and test transactions. I'm generally using this
    [[https://github.com/maticnetwork/jhilliard/tree/GH013-bypass/snowball][snowball]] script which creates a bunch of weird transactions for
    testing.
-4. Once the load is done, you can stop the devnet with ~docker compose
-   stop~
+4. Once the load is done, you can stop the devnet with ~docker compose stop~
 5. Checkout and build [[https://github.com/cffls/erigon/tree/feat/zero][jerrigon]] from the ~feat/zero~ branch. We'll need
    builds of the ~state~ binary along with ~erigon~
 6. Create a copy of the erigon state directory to avoid corrupting things
