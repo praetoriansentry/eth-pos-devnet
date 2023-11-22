@@ -29,7 +29,27 @@ services:
   # Sets up the genesis configuration for the go-ethereum client from a JSON file.
   geth-genesis:
     image: "ethereum/client-go:latest"
-    command: --datadir=/execution init /execution/genesis.json
+    command: --datadir=/execution/geth init /execution/genesis.json
+    volumes:
+      - ./execution:/execution
+      - ./execution/genesis.json:/execution/genesis.json
+    depends_on:
+      create-beacon-chain-genesis:
+        condition: service_completed_successfully
+
+  geth-import:
+    image: "ethereum/client-go:latest"
+    command: --datadir=/execution/geth account import --password /execution/geth_password.txt /execution/sk.json
+    volumes:
+      - ./execution:/execution
+      - ./execution/genesis.json:/execution/genesis.json
+    depends_on:
+      create-beacon-chain-genesis:
+        condition: service_completed_successfully
+
+  erigon-genesis:
+    image: "thorax/erigon:devel"
+    command: --datadir=/execution/erigon init /execution/genesis.json
     volumes:
       - ./execution:/execution
       - ./execution/genesis.json:/execution/genesis.json
@@ -61,6 +81,7 @@ services:
       - --minimum-peers-per-subnet=0
       - --enable-debug-rpc-endpoints
       - --p2p-static-id
+      - --p2p-tcp-port=13000
     depends_on:
       create-beacon-chain-genesis:
         condition: service_completed_successfully
@@ -72,17 +93,22 @@ services:
       - 8080:8080
       - 6060:6060
       - 9090:9090
+      - 13000:13000
     volumes:
       - ./consensus:/consensus
       - ./execution:/execution
       - ./execution/jwtsecret:/execution/jwtsecret
+    networks:
+      polygon-net:
+        ipv4_address: 10.100.100.10
 
 
   beacon-chain-2:
     image: "gcr.io/prysmaticlabs/prysm/beacon-chain:v4.0.8"
     command:
       - --datadir=/consensus/beacondata-2
-      - --bootstrap-node=enr:-MK4QCsVkAoAfeJA6_aJYF4piz7bk3OREdsfxDu4sitkCj4XJYlXsNLKbhlEtrQEr1HZw8mvNdeydIlQqBt6E7Su9rmGAYv3MqzTh2F0dG5ldHOIAAAAAAAAAACEZXRoMpBa8xKTIAAAkv__________gmlkgnY0gmlwhKwSAAOJc2VjcDI1NmsxoQIs_IFTc4n1bgSHP8fga_ASyG3CrxK7owx88Rqe05FinYhzeW5jbmV0cwCDdGNwgjLIg3VkcIIu4A
+      - --bootstrap-node=enr:-MK4QM1Wi7H-T52YEzJ1Ja--DIrqvp1VUMH7CoewzDk5rAIbTO4zfbsY-wOvFqdiPpqki5S1Lj5_nOVpleE_BldN6h-GAYv3b291h2F0dG5ldHOIAAAAAAAAAACEZXRoMpBa8xKTIAAAkv__________gmlkgnY0gmlwhApkZAqJc2VjcDI1NmsxoQI778OxC5HP9v87abs54E1H8n8Jo3fVGH2XsQwmBDEI1ohzeW5jbmV0cwCDdGNwgjLIg3VkcIIu4A
+      - --peer=enr:-MK4QM1Wi7H-T52YEzJ1Ja--DIrqvp1VUMH7CoewzDk5rAIbTO4zfbsY-wOvFqdiPpqki5S1Lj5_nOVpleE_BldN6h-GAYv3b291h2F0dG5ldHOIAAAAAAAAAACEZXRoMpBa8xKTIAAAkv__________gmlkgnY0gmlwhApkZAqJc2VjcDI1NmsxoQI778OxC5HP9v87abs54E1H8n8Jo3fVGH2XsQwmBDEI1ohzeW5jbmV0cwCDdGNwgjLIg3VkcIIu4A
       - --min-sync-peers=1
       - --genesis-state=/consensus/genesis.ssz
       - --interop-eth1data-votes
@@ -91,21 +117,27 @@ services:
       - --chain-id=${CHAIN_ID:-32382}
       - --rpc-host=0.0.0.0
       - --grpc-gateway-host=0.0.0.0
-      - --execution-endpoint=http://geth:8551
+      - --execution-endpoint=http://erigon:8551
       - --accept-terms-of-use
       - --jwt-secret=/execution/jwtsecret
       - --suggested-fee-recipient=0x123463a4b065722e99115d6c222f267d9cabb524
       - --minimum-peers-per-subnet=0
       - --enable-debug-rpc-endpoints
+      - --p2p-tcp-port=13001
     depends_on:
       create-beacon-chain-genesis:
         condition: service_completed_successfully
       create-beacon-node-keys:
         condition: service_completed_successfully
+    ports:
+      - 13001:13001
     volumes:
       - ./consensus:/consensus
       - ./execution:/execution
       - ./execution/jwtsecret:/execution/jwtsecret
+    networks:
+      polygon-net:
+        ipv4_address: 10.100.100.11
 
   # Runs the go-ethereum execution client with the specified, unlocked account and necessary
   # APIs to allow for proof-of-stake consensus via Prysm.
@@ -123,7 +155,7 @@ services:
       - --authrpc.vhosts=*
       - --authrpc.addr=0.0.0.0
       - --authrpc.jwtsecret=/execution/jwtsecret
-      - --datadir=/execution
+      - --datadir=/execution/geth
       - --allow-insecure-unlock
       - --unlock=0x123463a4b065722e99115d6c222f267d9cabb524
       - --password=/execution/geth_password.txt
@@ -136,12 +168,49 @@ services:
     depends_on:
       geth-genesis:
         condition: service_completed_successfully
+      geth-import:
+        condition: service_completed_successfully
       beacon-chain-1:
         condition: service_started
     volumes:
       - ./execution:/execution
       - ./execution/jwtsecret:/execution/jwtsecret
       - ./execution/geth_password.txt:/execution/geth_password.txt
+    networks:
+      polygon-net:
+        ipv4_address: 10.100.100.12
+
+  # Runs the go-ethereum execution client with the specified, unlocked account and necessary
+  # APIs to allow for proof-of-stake consensus via Prysm.
+  erigon:
+    image: "thorax/erigon:devel"
+    command:
+      - --http
+      - --http.api=eth,net,web3,erigon,engine
+      - --http.addr=0.0.0.0
+      - --http.corsdomain=*
+      - --ws
+      - --authrpc.vhosts=*
+      - --authrpc.addr=0.0.0.0
+      - --authrpc.jwtsecret=/execution/jwtsecret
+      - --datadir=/execution/erigon
+      - --nat=extip:10.100.100.13
+    ports:
+      - 18551:8551
+      - 18545:8545
+      - 18546:8546
+    depends_on:
+      geth-genesis:
+        condition: service_completed_successfully
+      beacon-chain-2:
+        condition: service_started
+    volumes:
+      - ./execution:/execution
+      - ./execution/jwtsecret:/execution/jwtsecret
+    networks:
+      polygon-net:
+        ipv4_address: 10.100.100.13
+
 
   # We run a validator client with 64, deterministically-generated keys that match
   # The validator keys present in the beacon chain genesis state generated a few steps above.
@@ -159,4 +228,13 @@ services:
         condition: service_started
     volumes:
       - ./consensus:/consensus
+    networks:
+      polygon-net:
+        ipv4_address: 10.100.100.14
 
+networks:
+  polygon-net:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 10.100.100.0/24
