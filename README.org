@@ -117,8 +117,60 @@ sudo cp -r execution/erigon/ execution/erigon.bak
 sudo chown -R $USER:$USER execution/erigon.bak/
 #+end_src
 
-7. Run the stateless command
+7. [@7] Run the stateless command
 
 #+begin_src bash
 ~/code/jerrigon/build/bin/state stateless --genesis execution/genesis.json --block 1 --datadir $PWD/execution/erigon.bak --witnessDbFile $PWD/execution/erigon.bak/chaindata/ --statefile $PWD/jerrigon-state --chain mainnet
 #+end_src
+
+The output should basically look like this:
+
+#+begin_example
+extra data 000000000000000000000000000000000000000000000000000000000000000085da99c8a7c2c95964c8efd687e95e632fc533d60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+Preroot 0x839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
+witnesses will be stored to a db at path: /home/john/code/eth-pos-devnet/execution/erigon.bak/chaindata/
+	stats: /home/john/code/eth-pos-devnet/execution/erigon.bak/chaindata/.stats.csv
+Block number: 0, root: 839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
+current block number=1 hash=0x50606ea0d850e75566ed7eca63d12fcd9df7107026fc1ec98db3470ca22e96b7 root=0x839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
+Size of witness: 313
+Block number: 1, root: 839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
+current block number=2 hash=0x39daf6c627b040b2ec5483c95d489ac5e540054a4b6cd15607c465989fa8e414 root=0x839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
+Size of witness: 313
+Block number: 2, root: 839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
+current block number=3 hash=0x1189672b15cd6edcb18ec007623ae6c3a9b8c7f85125ef73de402b3e9d9c779e root=0x839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
+Size of witness: 313
+Block number: 3, root: 839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
+current block number=4 hash=0x6c5610ff779d3dfb1b01ddbcc268d0b7420e10d8f05771b1574186e09243682c root=0x839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
+Size of witness: 313
+#+end_example
+
+8. [@8] Now we can start the Jerrigon fork of Erigon. This will give
+   us RPC access to the state that we created in the previous steps.
+
+#+begin_src bash
+~/code/jerrigon/build/bin/erigon \
+    --http \
+    --http.api=eth,net,web3,erigon,engine,debug \
+    --http.addr=0.0.0.0 \
+    --http.corsdomain=* \
+    --ws \
+    --datadir=./execution/erigon.bak
+#+end_src
+
+9. [@9] With the RPC running we can retrieve the blocks, witnesses, and use zero-bin to parse them.
+
+
+#+begin_src bash
+# Create a directory for storing the outputs
+mkdir out
+
+# Call the zeroTracer to get the traces
+seq 0 85 | awk '{print "curl -o " sprintf("out/wit_%02d", $0) ".json -H '"'"'Content-Type: application/json'"'"' -d '"'"'{\"method\":\"debug_traceBlockByNumber\",\"params\":[\"" sprintf("0x%02X", $0) "\", {\"tracer\": \"zeroTracer\"}],\"id\":1,\"jsonrpc\":\"2.0\"}'"'"' http://127.0.0.1:8545"}' | bash
+
+# download the blocks
+seq 0 85 | awk '{print "cast block --full -j " $0 " > out/block_" sprintf("%02d", $0) ".json"}' | bash
+
+# use zero-bin to convert
+seq 0 85 | awk '{print "~/code/zero-bin/target/debug/rpc fetch --rpc-url http://127.0.0.1:8545 --block-number " $0 " > " sprintf("out/zero_%02d", $0) ".json" }' | bash
+#+end_src
+
