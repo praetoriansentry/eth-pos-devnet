@@ -177,7 +177,7 @@ seq 0 85 | awk '{print "curl -o " sprintf("out/wit_%02d", $0) ".json -H '"'"'Con
 seq 0 85 | awk '{print "cast block --full -j " $0 " > out/block_" sprintf("%02d", $0) ".json"}' | bash
 #+end_src
 
-10. At this point, we'll want to checkout and build [[https://github.com/0xPolygonZero/zero-bin][zero-bin]] in order
+10. [@10] At this point, we'll want to checkout and build [[https://github.com/0xPolygonZero/zero-bin][zero-bin]] in order
     to test proof generation. Make sure to checkout that repo and run
     ~cargo build --release~ to compile the application for testing. The snippets
     below assume [[https://github.com/0xPolygonZero/zero-bin][zero-bin]] has been checked out and compiled in
