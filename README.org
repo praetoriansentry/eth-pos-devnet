@@ -189,7 +189,7 @@ seq 0 85 | awk '{print "cast block --full -j " $0 " > out/block_" sprintf("%02d"
 seq 0 85 | awk '{print "~/code/zero-bin/target/release/rpc fetch --rpc-url http://127.0.0.1:8545 --block-number " $0 " > " sprintf("out/zero_%02d", $0) ".json" }' | bash
 
 # use zero-bin to generate a proof for the genesis block
-./leader --arithmetic 16..23 --byte-packing 9..21 --cpu 15..25 --keccak 14..20 --keccak-sponge 9..15 --logic 12..18 --memory 18..28 --runtime in-memory -n 1 jerigon --rpc-url http://127.0.0.1:8545 --block-number 1 --proof-output-path 1.json
-seq 2 85 | awk '{print "./leader --arithmetic 16..23 --byte-packing 9..21 --cpu 15..25 --keccak 14..20 --keccak-sponge 9..15 --logic 12..18 --memory 18..28  --runtime in-memory -n 1 jerigon --rpc-url http://127.0.0.1:8545 --block-number " $1 " --proof-output-path " $1 ".json --previous-proof " ($1 - 1) ".json"}'
+./leader --arithmetic 16..23 --byte-packing 9..21 --cpu 12..25 --keccak 14..20 --keccak-sponge 9..15 --logic 12..18 --memory 17..28 --runtime in-memory -n 1 jerigon --rpc-url http://127.0.0.1:8545 --block-number 1 --proof-output-path 1.json
+seq 2 85 | awk '{print "./leader --arithmetic 16..23 --byte-packing 9..21 --cpu 12..25 --keccak 14..20 --keccak-sponge 9..15 --logic 12..18 --memory 17..28  --runtime in-memory -n 1 jerigon --rpc-url http://127.0.0.1:8545 --block-number " $1 " --proof-output-path " $1 ".json --previous-proof " ($1 - 1) ".json"}'
 #+end_src
 
