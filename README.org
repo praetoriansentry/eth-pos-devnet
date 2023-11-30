@@ -177,17 +177,19 @@ seq 0 85 | awk '{print "curl -o " sprintf("out/wit_%02d", $0) ".json -H '"'"'Con
 seq 0 85 | awk '{print "cast block --full -j " $0 " > out/block_" sprintf("%02d", $0) ".json"}' | bash
 #+end_src
 
-10. [@10] At this point, we'll want to checkout and build [[https://github.com/0xPolygonZero/zero-bin][zero-bin]] in order
-    to test proof generation. Make sure to checkout that repo and run
-    ~cargo build --release~ to compile the application for testing. The snippets
-    below assume [[https://github.com/0xPolygonZero/zero-bin][zero-bin]] has been checked out and compiled in
-    ~$HOME/code/zero-bin~.
+10. [@10] At this point, we'll want to checkout and build [[https://github.com/0xPolygonZero/zero-bin][zero-bin]] in
+    order to test proof generation. Make sure to checkout that repo
+    and run ~cargo build --release~ to compile the application for
+    testing. The snippets below assume [[https://github.com/0xPolygonZero/zero-bin][zero-bin]] has been checked out
+    and compiled in ~$HOME/code/zero-bin~. Currently, you'll need to
+    use the ~proof_fixes~ branch.
 
 #+begin_src bash
 # use zero-bin to convert witness formats. This is a basic test
 seq 0 85 | awk '{print "~/code/zero-bin/target/release/rpc fetch --rpc-url http://127.0.0.1:8545 --block-number " $0 " > " sprintf("out/zero_%02d", $0) ".json" }' | bash
 
 # use zero-bin to generate a proof for the genesis block
-~/code/zero-bin/target/release/leader --runtime in-memory jerigon -u http://127.0.0.1:8545 -b 0
+./leader --arithmetic 16..23 --byte-packing 9..21 --cpu 15..25 --keccak 14..20 --keccak-sponge 9..15 --logic 12..18 --memory 18..28 --runtime in-memory -n 1 jerigon --rpc-url http://127.0.0.1:8545 --block-number 1 --proof-output-path 1.json
+seq 2 85 | awk '{print "./leader --arithmetic 16..23 --byte-packing 9..21 --cpu 15..25 --keccak 14..20 --keccak-sponge 9..15 --logic 12..18 --memory 18..28  --runtime in-memory -n 1 jerigon --rpc-url http://127.0.0.1:8545 --block-number " $1 " --proof-output-path " $1 ".json --previous-proof " ($1 - 1) ".json"}'
 #+end_src
 
