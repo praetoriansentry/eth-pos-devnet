@@ -109,7 +109,7 @@ for creating some test data.
    testing.
 4. Once the load is done, you can stop the devnet with ~docker compose
    stop~ if you ran in detached mode.
-5. Checkout and build [[https://github.com/cffls/erigon/tree/feat/zero][jerrigon]] from the ~feat/zero~ branch. We'll need
+5. Checkout and build [[https://github.com/0xPolygonZero/erigon][jerrigon]] from the ~feat/zero~ branch. We'll need
    builds of the ~state~ binary along with ~erigon~
 6. Create a copy of the erigon state directory to avoid corrupting things
 
@@ -119,7 +119,7 @@ sudo chown -R $USER:$USER execution/erigon.bak/
 #+end_src
 
 7. [@7] Run the stateless command. The snippet below and some of the
-   others assume you've checked out [[https://github.com/cffls/erigon/tree/feat/zero][jerrigon]] in ~$HOME/code/jerrigon~
+   others assume you've checked out [[https://github.com/0xPolygon/erigon/tree/feat/zero][jerrigon]] in ~$HOME/code/jerrigon~
    and that you've also run ~make all~ in that repo in order to have
    the necessary binaries.
 
