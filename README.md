@@ -176,7 +176,7 @@ seq 0 110 | awk '{print "cast block --full -j " $0 " > out/block_" sprintf("%02d
     snippets below assume
     [zero-bin](https://github.com/0xPolygonZero/zero-bin) has been
     checked out and compiled in `$HOME/code/zero-bin`. Currently, you'll
-    need to use the `main` branch.
+    need to use the `assorted_fixes` branch.
 
 ``` bash
 # use zero-bin to convert witness formats. This is a basic test
@@ -196,6 +196,7 @@ seq 2 110 | awk '{print "./leader --arithmetic 16..23 --byte-packing 9..21 --cpu
 - When you run `zero-bin`, a local file will be created with a name
   like `prover_state_*`. This file needs to be deleted if any of the
   [circuit sizes are changed](https://github.com/0xPolygonZero/zero-bin#leader-usage).
+- There is a [useful script](https://github.com/0xPolygonZero/zero-bin/blob/assorted_fixes/tools/prove_blocks.sh) in `zero-bin` to run a range of proofs.
 
 
 Both the state witness generation and the decoding logic are actively
