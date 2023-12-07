@@ -98,7 +98,7 @@ creating some test data.
 4.  Once the load is done, you can stop the devnet with `docker compose
       stop` if you ran in detached mode.
 5.  Checkout and build
-    [jerrigon](https://github.com/0xPolygonZero/erigon) from the
+    [jerrigon](https://github.com/0xPolygonZero/erigon/tree/feat/zero) from the
     `feat/zero` branch. We'll need builds of the `state` binary along
     with `erigon`
 6.  Create a copy of the erigon state directory to avoid corrupting
@@ -195,7 +195,7 @@ seq 2 110 | awk '{print "./leader --arithmetic 16..23 --byte-packing 9..21 --cpu
 - You'll want to run `zero-bin` on a system with at least 32GB of RAM.
 - When you run `zero-bin`, a local file will be created with a name
   like `prover_state_*`. This file needs to be deleted if any of the
-  circuit sizes are changed.
+  [circuit sizes are changed](https://github.com/0xPolygonZero/zero-bin#leader-usage).
 
 
 Both the state witness generation and the decoding logic are actively
