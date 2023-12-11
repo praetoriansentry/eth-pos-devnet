@@ -154,8 +154,8 @@ Size of witness: 313
 ```
 
 9.  With the RPC running we can retrieve the blocks, witnesses, and use
-    zero-bin to parse them. In my test case, I generated about 85 blocks
-    worth of data so I'm going to use `seq 0 110` for generating ranges
+    zero-bin to parse them. In my test case, I generated about 240 blocks
+    worth of data so I'm going to use `seq 0 240` for generating ranges
     of block numbers for testing purposes
 
 ``` bash
@@ -163,28 +163,30 @@ Size of witness: 313
 mkdir out
 
 # Call the zeroTracer to get the traces
-seq 0 110 | awk '{print "curl -o " sprintf("out/wit_%02d", $0) ".json -H '"'"'Content-Type: application/json'"'"' -d '"'"'{\"method\":\"debug_traceBlockByNumber\",\"params\":[\"" sprintf("0x%X", $0) "\", {\"tracer\": \"zeroTracer\"}],\"id\":1,\"jsonrpc\":\"2.0\"}'"'"' http://127.0.0.1:8545"}' | bash
+seq 0 240 | awk '{print "curl -o " sprintf("out/wit_%02d", $0) ".json -H '"'"'Content-Type: application/json'"'"' -d '"'"'{\"method\":\"debug_traceBlockByNumber\",\"params\":[\"" sprintf("0x%X", $0) "\", {\"tracer\": \"zeroTracer\"}],\"id\":1,\"jsonrpc\":\"2.0\"}'"'"' http://127.0.0.1:8545"}' | bash
 
 # download the blocks (this assumes you have foundry/cast installed)
-seq 0 110 | awk '{print "cast block --full -j " $0 " > out/block_" sprintf("%02d", $0) ".json"}' | bash
+seq 0 240 | awk '{print "cast block --full -j " $0 " > out/block_" sprintf("%02d", $0) ".json"}' | bash
 ```
 
 10. At this point, we'll want to checkout and build
     [zero-bin](https://github.com/0xPolygonZero/zero-bin) in order to
     test proof generation. Make sure to checkout that repo and run
-    `cargo build --release` to compile the application for testing. The
-    snippets below assume
+    `cargo build --release` to compile the application for
+    testing. The snippets below assume
     [zero-bin](https://github.com/0xPolygonZero/zero-bin) has been
-    checked out and compiled in `$HOME/code/zero-bin`. Currently, you'll
-    need to use the `assorted_fixes` branch.
+    checked out and compiled in `$HOME/code/zero-bin`. Currently,
+    you'll need to use the `assorted_fixes` branch. After compiling,
+    the `leader` and `rpc` binaries will be created in the
+    `target/release` folder.
 
 ``` bash
 # use zero-bin to convert witness formats. This is a basic test
-seq 0 110 | awk '{print "~/code/zero-bin/target/release/rpc fetch --rpc-url http://127.0.0.1:8545 --block-number " $0 " > " sprintf("out/zero_%02d", $0) ".json" }' | bash
+seq 0 240 | awk '{print "~/code/zero-bin/target/release/rpc fetch --rpc-url http://127.0.0.1:8545 --block-number " $0 " > " sprintf("out/zero_%02d", $0) ".json" }' | bash
 
 # use zero-bin to generate a proof for the genesis block
 ./leader --arithmetic 16..23 --byte-packing 9..21 --cpu 12..25 --keccak 14..20 --keccak-sponge 9..15 --logic 12..18 --memory 17..28 --runtime in-memory -n 1 jerigon --rpc-url http://127.0.0.1:8545 --block-number 1 --proof-output-path 1.json
-seq 2 110 | awk '{print "./leader --arithmetic 16..23 --byte-packing 9..21 --cpu 12..25 --keccak 14..20 --keccak-sponge 9..15 --logic 12..18 --memory 17..28  --runtime in-memory -n 4 jerigon --rpc-url http://127.0.0.1:8545 --block-number " $1 " --proof-output-path " $1 ".json --previous-proof " ($1 - 1) ".json"}'
+seq 2 240 | awk '{print "./leader --arithmetic 16..23 --byte-packing 9..21 --cpu 12..25 --keccak 14..20 --keccak-sponge 9..15 --logic 12..18 --memory 17..28  --runtime in-memory -n 4 jerigon --rpc-url http://127.0.0.1:8545 --block-number " $1 " --proof-output-path " $1 ".json --previous-proof " ($1 - 1) ".json"}'
 ```
 
 ## Operational Notes
