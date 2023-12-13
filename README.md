@@ -149,7 +149,12 @@ Size of witness: 313
     --http.api=eth,net,web3,erigon,engine,debug \
     --http.addr=0.0.0.0 \
     --http.corsdomain=* \
+    --http.vhosts any \
     --ws \
+    --nodiscover=true \
+    --txpool.disable=true \
+    --no-downloader=true \
+    --maxpeers 0 \
     --datadir=./execution/erigon.bak
 ```
 
