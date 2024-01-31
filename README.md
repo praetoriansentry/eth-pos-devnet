@@ -79,7 +79,7 @@ docker logs eth-pos-devnet-geth-1 -f
 # Type 1 Prover Testing Procedure
 
 The intent of this repo is to be able to test Erigon State Witnesses
-against the Zero Pover. Using this devnet setup, here is a procedure for
+against the Type-1 Prover. Using this devnet setup, here is a procedure for
 creating some test data.
 
 1.  Start the devnet up with `docker compose up`. If you've run
