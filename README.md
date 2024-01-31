@@ -75,15 +75,8 @@ docker logs eth-pos-devnet-geth-1 -f
 -   The Prysm client also exposes a gRPC API at
     <http://beacon-chain:4000>
 
-# Short Cuts
 
-This is a shortcut to Create the genesis file allocations for our mnemonic
-
-``` bash
-polycli wallet inspect --mnemonic "code code code code code code code code code code code quality" | jq '.Addresses[] | {"key": .ETHAddress, "value": { "balance": "0x21e19e0c9bab2400000"}}' | jq -s 'from_entries'
-```
-
-# Zero Prover Testing Procedure
+# Type 1 Prover Testing Procedure
 
 The intent of this repo is to be able to test Erigon State Witnesses
 against the Zero Pover. Using this devnet setup, here is a procedure for
@@ -184,3 +177,12 @@ use-cases should prove without issue:
 - ERC-20 mints & transfers
 - ERC-721 mintes & transfers
 
+### Short Cuts
+
+This is a shortcut to create the genesis file allocations for our
+mnemonic. This has already been hard coded into the genesis file, but
+if you want to use a different testing account, you can use this.
+
+``` bash
+polycli wallet inspect --mnemonic "code code code code code code code code code code code quality" | jq '.Addresses[] | {"key": .ETHAddress, "value": { "balance": "0x21e19e0c9bab2400000"}}' | jq -s 'from_entries'
+```
