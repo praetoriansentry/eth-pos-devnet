@@ -77,7 +77,7 @@ docker logs eth-pos-devnet-geth-1 -f
 
 # Short Cuts
 
-Create the genesis file allocations for our mnemonic
+This is a shortcut to Create the genesis file allocations for our mnemonic
 
 ``` bash
 polycli wallet inspect --mnemonic "code code code code code code code code code code code quality" | jq '.Addresses[] | {"key": .ETHAddress, "value": { "balance": "0x21e19e0c9bab2400000"}}' | jq -s 'from_entries'
@@ -89,9 +89,12 @@ The intent of this repo is to be able to test Erigon State Witnesses
 against the Zero Pover. Using this devnet setup, here is a procedure for
 creating some test data.
 
-1.  Start the devnet up with `docker compose up`
-2.  Wait for blocks to start being produced. This should only take a few
-    seconds
+1.  Start the devnet up with `docker compose up`. If you've run
+    previously, you might want to do a `make clean` to avoid running
+    from a previous state.
+2.  Wait for blocks to start being produced. This should only take a
+    few seconds. You can use `polycli monitor` to quickly check that
+    blocks are being created.
 3.  Generate some load and test transactions. Use
     [polycli](https://github.com/maticnetwork/polygon-cli/blob/main/doc/polycli_loadtest.md)
     or some other tool to create transactions.
@@ -99,8 +102,7 @@ creating some test data.
       stop` if you ran in detached mode.
 5.  Checkout and build
     [jerrigon](https://github.com/0xPolygonZero/erigon/tree/feat/zero) from the
-    `feat/zero` branch. We'll need builds of the `state` binary along
-    with `erigon`
+    `feat/zero` branch. You can use `make all` to build everything.
 6.  Create a copy of the erigon state directory to avoid corrupting
     things
 
@@ -108,39 +110,7 @@ creating some test data.
 sudo cp -r execution/erigon/ execution/erigon.bak
 sudo chown -R $USER:$USER execution/erigon.bak/
 ```
-
-7.  Run the stateless command. The snippet below and some of the others
-    assume you've checked out
-    [jerrigon](https://github.com/0xPolygonZero/erigon/tree/feat/zero)
-    in `$HOME/code/jerrigon` and that you've also run `make all` in that
-    repo in order to have the necessary binaries.
-
-``` bash
-~/code/jerrigon/build/bin/state stateless --genesis execution/genesis.json --block 1 --datadir $PWD/execution/erigon.bak --witnessDbFile $PWD/execution/erigon.bak/chaindata/ --statefile $PWD/jerrigon-state --chain mainnet
-```
-
-The output should basically look like this:
-
-``` example
-extra data 000000000000000000000000000000000000000000000000000000000000000085da99c8a7c2c95964c8efd687e95e632fc533d60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-Preroot 0x839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
-witnesses will be stored to a db at path: /home/john/code/eth-pos-devnet/execution/erigon.bak/chaindata/
-    stats: /home/john/code/eth-pos-devnet/execution/erigon.bak/chaindata/.stats.csv
-Block number: 0, root: 839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
-current block number=1 hash=0x50606ea0d850e75566ed7eca63d12fcd9df7107026fc1ec98db3470ca22e96b7 root=0x839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
-Size of witness: 313
-Block number: 1, root: 839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
-current block number=2 hash=0x39daf6c627b040b2ec5483c95d489ac5e540054a4b6cd15607c465989fa8e414 root=0x839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
-Size of witness: 313
-Block number: 2, root: 839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
-current block number=3 hash=0x1189672b15cd6edcb18ec007623ae6c3a9b8c7f85125ef73de402b3e9d9c779e root=0x839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
-Size of witness: 313
-Block number: 3, root: 839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
-current block number=4 hash=0x6c5610ff779d3dfb1b01ddbcc268d0b7420e10d8f05771b1574186e09243682c root=0x839f6f881ef925324552367f8656568a313cd3feb7ccc8bfd77fd2176d0fe636
-Size of witness: 313
-```
-
-8.  Now we can start the Jerrigon fork of Erigon. This will give us RPC
+7.  Now we can start the Jerrigon fork of Erigon. This will give us RPC
     access to the state that we created in the previous steps.
 
 ``` bash
@@ -158,7 +128,7 @@ Size of witness: 313
     --datadir=./execution/erigon.bak
 ```
 
-9.  With the RPC running we can retrieve the blocks, witnesses, and use
+8.  With the RPC running we can retrieve the blocks, witnesses, and use
     zero-bin to parse them. In my test case, I generated about 240 blocks
     worth of data so I'm going to use `seq 0 240` for generating ranges
     of block numbers for testing purposes
@@ -174,15 +144,14 @@ seq 0 240 | awk '{print "curl -o " sprintf("out/wit_%02d", $0) ".json -H '"'"'Co
 seq 0 240 | awk '{print "cast block --full -j " $0 " > out/block_" sprintf("%02d", $0) ".json"}' | bash
 ```
 
-10. At this point, we'll want to checkout and build
+9. At this point, we'll want to checkout and build
     [zero-bin](https://github.com/0xPolygonZero/zero-bin) in order to
     test proof generation. Make sure to checkout that repo and run
     `cargo build --release` to compile the application for
     testing. The snippets below assume
     [zero-bin](https://github.com/0xPolygonZero/zero-bin) has been
-    checked out and compiled in `$HOME/code/zero-bin`. Currently,
-    you'll need to use the `assorted_fixes` branch. After compiling,
-    the `leader` and `rpc` binaries will be created in the
+    checked out and compiled in `$HOME/code/zero-bin`. After
+    compiling, the `leader` and `rpc` binaries will be created in the
     `target/release` folder.
 
 ``` bash
