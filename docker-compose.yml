@@ -49,7 +49,10 @@ services:
 
   erigon-genesis:
     image: "thorax/erigon:devel"
-    command: --datadir=/execution/erigon init /execution/genesis.json
+    user: root
+    command: 
+      - --datadir=/execution/erigon init /execution/genesis.json
+      - --db.size.limit=1GB
     volumes:
       - ./execution:/execution
       - ./execution/genesis.json:/execution/genesis.json
@@ -184,6 +187,7 @@ services:
   # APIs to allow for proof-of-stake consensus via Prysm.
   erigon:
     image: "thorax/erigon:devel"
+    user: root
     command:
       - --http
       - --http.api=eth,net,web3,erigon,engine,debug
@@ -195,6 +199,7 @@ services:
       - --authrpc.jwtsecret=/execution/jwtsecret
       - --datadir=/execution/erigon
       - --nat=extip:10.100.100.13
+      - --db.size.limit=1GB
     ports:
       - 18551:8551
       - 18545:8545
